@@ -39,14 +39,21 @@ fraud-detection-guard/
 │  Vite Build      │    │  │     Apps        │  │   (FastAPI)     │  │
 └──────────────────┘    │  └─────────────────┘  └─────────────────┘  │
                         │           │                     │            │
-                        │           ▼                     ▼            │
-┌──────────────────┐    │  ┌─────────────────┐  ┌─────────────────┐  │
-│   ML Pipeline    │    │  │  PostgreSQL     │  │  Redis Cache    │  │
-│                  │    │  │   Database      │  │   + Streams     │  │
-│ XGBoost + ONNX   │◄──►│  └─────────────────┘  └─────────────────┘  │
-│ Feature Eng.     │    │                                             │
-│ Model Training   │    └─────────────────────────────────────────────┘
-└──────────────────┘
+┌──────────────────┐    │           ▼                     ▼            │
+│ External APIs    │    │  ┌─────────────────┐  ┌─────────────────┐  │
+│                  │    │  │  PostgreSQL     │  │  Redis Cache    │  │
+│ 📧 SMTP (Gmail)  │◄──►│  │   Database      │  │   + Streams     │  │
+│ 📱 Twilio (SMS)  │    │  └─────────────────┘  └─────────────────┘  │
+└──────────────────┘    │                                             │
+                        └─────────────────────────────────────────────┘
+┌──────────────────┐
+│   ML Pipeline    │    ┌─────────────────────────────────────────────┐
+│                  │    │            GitHub Actions CI/CD             │
+│ XGBoost + ONNX   │    │                                             │
+│ Feature Eng.     │    │  Code Push ──► Tests ──► Build ──► Deploy  │
+│ Model Training   │    │              ├─Backend ──► Azure App Service│
+└──────────────────┘    │              └─Frontend ──► Static Web Apps │
+                        └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        CORE PROCESSING FLOW                         │
@@ -55,9 +62,16 @@ fraud-detection-guard/
 │  Transaction ──► Feature ──► Rule ──► ML ──► Decision              │
 │   Ingestion      Extract     Engine    Model   (Approve/           │
 │                                              Verify/Block)         │
+│                                    │                               │
+│                                    ▼                               │
+│  Email Notifications: 📧 samhillux@gmail.com (SMTP)               │
+│  ├─ Transaction blocked alerts                                     │
+│  ├─ Verification codes (OTP)                                       │
+│  └─ User notifications                                             │
 │                                                                     │
-│  Background: Alert Workers ──► Email/SMS Notifications             │
-│              Audit Workers ──► Compliance Logging                  │
+│  SMS Notifications: 📱 Twilio API                                  │
+│  ├─ OTP verification codes                                         │
+│  └─ Fraud alerts                                                   │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -68,18 +82,22 @@ fraud-detection-guard/
 - **Database**: Azure Database for PostgreSQL (managed service)
 - **Cache**: Azure Cache for Redis for real-time event streams
 - **ML**: ONNX runtime with XGBoost models for fraud scoring
+- **Email**: SMTP integration with Gmail (samhillux@gmail.com)
+- **SMS**: Twilio API for OTP and alerts
+- **Deployment**: GitHub Actions → Azure (automated CI/CD)
 - **Monitoring**: Azure Application Insights for observability
 
 ## 🚀 Key Features
 
-- **⚡ Real-time Processing** - Sub-second transaction decisions with 99.9% uptime
+- **⚡ Real-time Processing** - Sub-second transaction decisions with Azure auto-scaling
 - **🤖 ML-Powered Scoring** - ONNX runtime with XGBoost ensemble models
 - **📏 Business Rules Engine** - Configurable rules with dynamic score adjustments
 - **🔍 Multi-tier Decisions** - Approve, verify, or block with confidence scoring
 - **📊 Live Dashboard** - Real-time monitoring with fraud metrics and alerts
-- **🔐 Verification Workflow** - SMS/Email OTP with audit trails
+- **🔐 Verification Workflow** - SMS (Twilio) + Email (SMTP) OTP with audit trails
+- **📧 Email Notifications** - Automated alerts for blocked transactions and verifications
 - **📈 Performance Analytics** - Model accuracy tracking and system metrics
-- **🌐 Enterprise Ready** - Deployed on Azure with auto-scaling
+- **🌐 Enterprise Ready** - GitHub Actions CI/CD with Azure deployment
 
 ## 🛠️ Tech Stack
 
@@ -90,19 +108,23 @@ fraud-detection-guard/
 | **Database** | PostgreSQL + SQLAlchemy 2.0 | Transactional data storage |
 | **Cache** | Redis + Streams | Real-time event processing |
 | **ML Runtime** | ONNX + XGBoost + Scikit-learn | Fraud model inference |
-| **Deployment** | Azure App Service + Static Web Apps | Cloud-native scaling |
-| **CI/CD** | Azure DevOps | Automated deployments |
+| **Email Service** | SMTP + Gmail (samhillux@gmail.com) | Verification & notifications |
+| **SMS Service** | Twilio API | OTP delivery & alerts |
+| **Deployment** | GitHub Actions + Azure | Automated CI/CD pipeline |
+| **Hosting** | Azure App Service + Static Web Apps | Cloud-native scaling |
 
-## 🌐 Deployment Architecture
+## 🌐 Deployment & Services
 
-**Production Environment: Microsoft Azure**
+**Production Environment: Microsoft Azure + External APIs**
 
-- **Frontend**: Azure Static Web Apps (Global CDN)
-- **Backend API**: Azure App Service (Auto-scaling)
-- **Database**: Azure Database for PostgreSQL (Managed)
-- **Cache**: Azure Cache for Redis (High Availability)
-- **Monitoring**: Azure Application Insights
-- **Security**: Azure Key Vault + Managed Identity
+- **Frontend**: Azure Static Web Apps (Global CDN + Auto-deployment)
+- **Backend API**: Azure App Service (Auto-scaling + Health monitoring)
+- **Database**: Azure Database for PostgreSQL (Managed service)
+- **Cache**: Azure Cache for Redis (High availability + Persistence)
+- **Email**: SMTP via Gmail (samhillux@gmail.com for all notifications)
+- **SMS**: Twilio API (OTP verification + fraud alerts)
+- **CI/CD**: GitHub Actions workflows (Automated testing + deployment)
+- **Monitoring**: Azure Application Insights + Log Analytics
 
 ## � Quick Start
 
@@ -147,6 +169,35 @@ The system is deployed using Azure services:
 4. **Azure Cache for Redis** - In-memory data store
 
 View deployment workflows in `.github/workflows/`
+
+## 📧 Notification Services
+
+### Email Integration (SMTP + Gmail)
+- **Service**: Gmail SMTP server
+- **Account**: samhillux@gmail.com (dedicated service account)
+- **Use Cases**:
+  - 🔐 Email verification (OTP codes)
+  - 🚫 Blocked transaction alerts
+  - ⚠️ Fraud detection notifications
+  - 📋 System status updates
+
+### SMS Integration (Twilio API)
+- **Service**: Twilio Programmable SMS
+- **Use Cases**:
+  - 📱 SMS verification (OTP codes)
+  - 🚨 Real-time fraud alerts
+  - 🔒 Two-factor authentication
+  - 📞 Critical security notifications
+
+### Notification Flow
+```
+Transaction Event ──► Decision Engine ──► Notification Router
+                                               │
+                        ┌─────────────────────┼─────────────────────┐
+                        ▼                     ▼                     ▼
+                   📧 Email Queue        📱 SMS Queue        🔔 System Alerts
+                  (Gmail SMTP)        (Twilio API)      (Internal Logging)
+```
 
 ## � API Overview
 
