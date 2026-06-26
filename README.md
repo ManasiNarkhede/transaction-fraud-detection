@@ -26,61 +26,49 @@ fraud-detection-guard/
 
 ## 🏗️ System Architecture
 
-```mermaid
-flowchart TB
-    subgraph "Frontend Layer"
-        WEB[React 18 + TypeScript<br/>Tailwind CSS + Vite]
-        SWA[Azure Static Web Apps]
-    end
-
-    subgraph "API Layer - Azure App Service"
-        API[FastAPI + Python 3.11<br/>Async/Await Architecture]
-        MW[Middleware Stack<br/>CORS, Logging, Request ID]
-    end
-
-    subgraph "Core Services"
-        INGEST[Transaction Ingest]
-        ENGINE[Decision Engine]
-        RULES[Rule Engine + ML Models]
-        AUDIT[Audit & Verification]
-    end
-
-    subgraph "Data Layer - Azure"
-        POSTGRES[(PostgreSQL<br/>Azure Database)]
-        REDIS[(Redis Cache<br/>Azure Cache)]
-        STREAMS[Redis Streams<br/>Event Processing]
-    end
-
-    subgraph "ML Pipeline"
-        FEATURES[Feature Engineering]
-        ONNX[ONNX Models<br/>Fraud Scoring]
-        TRAIN[Training Pipeline<br/>XGBoost + Scikit-learn]
-    end
-
-    subgraph "Background Processing"
-        WORKERS[Alert + Audit Workers<br/>Async Task Processing]
-        NOTIFICATIONS[Email/SMS Alerts]
-    end
-
-    WEB --> SWA
-    SWA --> API
-    API --> MW --> INGEST
-    INGEST --> ENGINE
-    ENGINE --> RULES --> ONNX
-    ENGINE --> AUDIT
-    
-    INGEST --> POSTGRES
-    ENGINE --> REDIS --> STREAMS
-    STREAMS --> WORKERS --> NOTIFICATIONS
-    
-    FEATURES --> TRAIN --> ONNX
-    
-    classDef azure fill:#0078d4,stroke:#fff,stroke-width:2px,color:#fff
-    classDef ml fill:#ff6b35,stroke:#fff,stroke-width:2px,color:#fff
-    
-    class SWA,POSTGRES,REDIS azure
-    class FEATURES,ONNX,TRAIN ml
 ```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          FRAUD DETECTION GUARD                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────┐    ┌─────────────────────────────────────────────┐
+│   Frontend UI    │    │              Azure Cloud                    │
+│                  │    │                                             │
+│  React 18 + TS   │◄──►│  ┌─────────────────┐  ┌─────────────────┐  │
+│  Tailwind CSS    │    │  │  Static Web     │  │   App Service   │  │
+│  Vite Build      │    │  │     Apps        │  │   (FastAPI)     │  │
+└──────────────────┘    │  └─────────────────┘  └─────────────────┘  │
+                        │           │                     │            │
+                        │           ▼                     ▼            │
+┌──────────────────┐    │  ┌─────────────────┐  ┌─────────────────┐  │
+│   ML Pipeline    │    │  │  PostgreSQL     │  │  Redis Cache    │  │
+│                  │    │  │   Database      │  │   + Streams     │  │
+│ XGBoost + ONNX   │◄──►│  └─────────────────┘  └─────────────────┘  │
+│ Feature Eng.     │    │                                             │
+│ Model Training   │    └─────────────────────────────────────────────┘
+└──────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        CORE PROCESSING FLOW                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Transaction ──► Feature ──► Rule ──► ML ──► Decision              │
+│   Ingestion      Extract     Engine    Model   (Approve/           │
+│                                              Verify/Block)         │
+│                                                                     │
+│  Background: Alert Workers ──► Email/SMS Notifications             │
+│              Audit Workers ──► Compliance Logging                  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Architecture Highlights
+- **Frontend**: React 18 + TypeScript deployed on Azure Static Web Apps
+- **Backend**: FastAPI + Python 3.11 on Azure App Service with auto-scaling
+- **Database**: Azure Database for PostgreSQL (managed service)
+- **Cache**: Azure Cache for Redis for real-time event streams
+- **ML**: ONNX runtime with XGBoost models for fraud scoring
+- **Monitoring**: Azure Application Insights for observability
 
 ## 🚀 Key Features
 
