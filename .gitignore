@@ -1,0 +1,89 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.env
+!.env.example
+backend/.env
+.venv
+.toolvenv
+# env/
+venv/
+ENV/
+# env.bak/
+venv.bak/
+.python-version
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytest_cache/
+.ruff_cache/
+
+# === Node.js ===
+node_modules/
+npm-debug.log*
+*.local
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+logs/
+*.log
+
+# === ML/Data ===
+ml/data/raw/
+ml/data/processed/
+ml/models/
+ml/artifacts/
+ml/reports/
+*.pkl
+*.onnx
+*.joblib
+# CI-staged ONNX artifacts (produced at build time, never committed)
+backend/ml/
+
+# === Test Artifacts ===
+coverage/
+.coverage
+htmlcov/
+.tox/
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# Orchestrator working memory (local only)
+*.stackdump
+
+# Local secrets scratchpad (never commit)
+docs/deployment/secreate.txt
+docs/deployment/secrets*.txt
+
+backend/.civenv/
+.civenv/

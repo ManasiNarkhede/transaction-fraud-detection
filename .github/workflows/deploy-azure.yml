@@ -1,0 +1,122 @@
+name: Deploy Backend to Azure App Service
+
+# Deploys the backend/ directory to Azure App Service on push to main.
+# The frontend is deployed by azure-static-web-apps.yml (Azure SWA) — NOT here.
+#
+# Required GitHub secrets:
+#   AZURE_WEBAPP_PUBLISH_PROFILE  — download from App Service > Get publish profile
+#   AZURE_WEBAPP_NAME             — your App Service name, e.g. fraud-detection-api
+#
+# Optional: replace the hardcoded app name below with ${{ secrets.AZURE_WEBAPP_NAME }}
+# if you prefer to keep it secret, or set AZURE_WEBAPP_NAME as a repo variable.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-azure.yml"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  WORKING_DIRECTORY: backend
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Verify application imports
+        # Quick smoke-test — ensures the app module loads without errors.
+        run: python -c "import app.main; print('app.main import OK')"
+
+      - name: Run unit tests
+        # Keep CI tests fast; integration tests require live DB/Redis.
+        run: pip install pytest pytest-asyncio pytest-mock && pytest tests/unit -q --tb=short
+
+      # -------------------------------------------------------------------
+      # ML artifact build — train + export ONNX models and stage them into
+      # the backend tree so the App Service zip includes them.
+      #
+      # Runtime contract (from backend/app/services/onnx_inference.py):
+      #   model_dir default = "ml/models" (relative to CWD = wwwroot)
+      #   iso_path  = ml/models/isolation_forest.onnx
+      #   xgb_path  = ml/models/xgboost.onnx
+      #   feature_names_path = ml/models/../artifacts/feature_names.json
+      #                      = ml/artifacts/feature_names.json
+      #
+      # So artifacts must live at these paths inside the zip (= inside backend/):
+      #   backend/ml/models/isolation_forest.onnx
+      #   backend/ml/models/xgboost.onnx
+      #   backend/ml/artifacts/feature_names.json
+      # -------------------------------------------------------------------
+
+      - name: Create ML venv and install dependencies
+        working-directory: .
+        run: |
+          python -m venv ml/.venv
+          ml/.venv/bin/pip install --upgrade pip
+          ml/.venv/bin/pip install -r ml/requirements.txt
+
+      - name: Train ML models (synthetic data)
+        working-directory: .
+        # Run as a module from repo root so `from ml.config import ...` resolves
+        # (running `python ml/train.py` puts ml/ on sys.path, not the repo root).
+        run: ml/.venv/bin/python -m ml.train --synthetic
+
+      - name: Export models to ONNX
+        working-directory: .
+        run: |
+          ml/.venv/bin/python -m ml.onnx_export
+          echo "Verifying ONNX artifacts exist:"
+          ls -lh ml/models/*.onnx
+          ls -lh ml/artifacts/feature_names.json
+
+      - name: Stage ONNX artifacts into backend tree
+        working-directory: .
+        run: |
+          mkdir -p backend/ml/models
+          mkdir -p backend/ml/artifacts
+          cp ml/models/isolation_forest.onnx backend/ml/models/isolation_forest.onnx
+          cp ml/models/xgboost.onnx          backend/ml/models/xgboost.onnx
+          cp ml/artifacts/feature_names.json backend/ml/artifacts/feature_names.json
+          echo "Staged artifacts:"
+          ls -lh backend/ml/models/
+          ls -lh backend/ml/artifacts/
+
+      - name: Zip backend for deployment
+        # App Service zip deploy: zip the backend directory contents (not the
+        # directory itself) so wwwroot/ contains app/, alembic/, requirements.txt, etc.
+        working-directory: .
+        run: |
+          cd backend
+          zip -r ../backend.zip . \
+            --exclude "*.pyc" \
+            --exclude "__pycache__/*" \
+            --exclude ".venv/*" \
+            --exclude "tests/*" \
+            --exclude ".pytest_cache/*" \
+            --exclude "*.egg-info/*"
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: backend.zip
