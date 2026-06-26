@@ -82,7 +82,7 @@ fraud-detection-guard/
 - **Database**: Azure Database for PostgreSQL (managed service)
 - **Cache**: Azure Cache for Redis for real-time event streams
 - **ML**: ONNX runtime with XGBoost models for fraud scoring
-- **Email**: SMTP integration with Gmail (samhillux@gmail.com)
+- **Email**: SMTP integration with Gmail
 - **SMS**: Twilio API for OTP and alerts
 - **Deployment**: GitHub Actions → Azure (automated CI/CD)
 - **Monitoring**: Azure Application Insights for observability
@@ -108,7 +108,7 @@ fraud-detection-guard/
 | **Database** | PostgreSQL + SQLAlchemy 2.0 | Transactional data storage |
 | **Cache** | Redis + Streams | Real-time event processing |
 | **ML Runtime** | ONNX + XGBoost + Scikit-learn | Fraud model inference |
-| **Email Service** | SMTP + Gmail (samhillux@gmail.com) | Verification & notifications |
+| **Email Service** | SMTP + Gmail | Verification & notifications |
 | **SMS Service** | Twilio API | OTP delivery & alerts |
 | **Deployment** | GitHub Actions + Azure | Automated CI/CD pipeline |
 | **Hosting** | Azure App Service + Static Web Apps | Cloud-native scaling |
@@ -121,7 +121,7 @@ fraud-detection-guard/
 - **Backend API**: Azure App Service (Auto-scaling + Health monitoring)
 - **Database**: Azure Database for PostgreSQL (Managed service)
 - **Cache**: Azure Cache for Redis (High availability + Persistence)
-- **Email**: SMTP via Gmail (samhillux@gmail.com for all notifications)
+- **Email**: SMTP via Gmail
 - **SMS**: Twilio API (OTP verification + fraud alerts)
 - **CI/CD**: GitHub Actions workflows (Automated testing + deployment)
 - **Monitoring**: Azure Application Insights + Log Analytics
